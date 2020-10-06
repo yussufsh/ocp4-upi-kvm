@@ -1,0 +1,68 @@
+# This workflow installs the latest version of Terraform CLI. On pull request events, this workflow will run
+# `terraform init`, `terraform fmt`, and `terraform validate`. On push events no action will be taken.
+#
+
+name: 'Terraform'
+
+on:
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Install the latest version of Terraform CLI
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      run: terraform fmt -list -check -diff '-write=false' -recursive
+
+    - name: Create libvirt provider plugin local registry
+      run: |
+        sudo apt-get update && sudo apt-get install libvirt-bin libvirt-dev
+        echo 'Building and installing the libvirt provider plugin...'
+        export GOPATH=${HOME}
+        go get -u github.com/dmacvicar/terraform-provider-libvirt
+        mkdir -p ${HOME}/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/1.0.0/linux_amd64/
+        mv ${GOPATH}/bin/terraform-provider-libvirt ${HOME}/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/1.0.0/linux_amd64/
+        echo 'Done!'
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Validate
+      run: terraform validate -no-color
+
+    - name: Update Pull Request
+      uses: actions/github-script@0.9.0
+      if: github.event_name == 'pull_request'
+      env:
+        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+          #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+          #### Terraform Validation 🤖${{ steps.validate.outputs.stdout }}
+          
+          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+          
+          github.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
