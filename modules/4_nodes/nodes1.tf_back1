@@ -1,0 +1,79 @@
+# volumes
+resource "libvirt_volume" "bootstrap1" {
+    name            = "${var.cluster_id}-bootstrap1"
+    base_volume_id  = libvirt_volume.rhcos_base.id
+    pool            = var.storage_pool_name
+}
+
+# hostname-ignitions
+data "ignition_file" "b1_hostname" {
+    overwrite   = true
+    mode        = "420" // 0644
+    path        = "/etc/hostname"
+    content {
+        content = <<EOF
+bootstrap
+EOF
+    }
+}
+data "ignition_user" "core" {
+    name = "core"
+    password_hash = "$1$7X2OoGIo$SnfQ1fDrODPzpSo3sNEsj/"
+    ssh_authorized_keys = [
+          "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYsu4A0p2sMH/7xZAszHrP5lGKkukwE75QF6OO5GHqSdiwTKvF45XF08fR5wmNZV0TWDv+6OZ5goVHxVhzDc2U+mjoqu0h4bxM3oVihU1GtkMH7GhG2erxtze0Ee2Elt68zuYQRmvCw493FxsKz1B+e5ToY9SbdcoarPhsGuo5aVYz/J5GAwBxSbJxkLKycJrrQKxAAiLTT6Ht3BtrxqI7e6/hTGVK+ZTRA2pic0L3k0SLfYCRPRcORaMoopHuH5g1Zttk2XWihwpcztg3JENSX0pSdZI1uLyMIwW2O2nHYY5UoMShgt4HxJMbowJ23Vr+Ed03nC7OuF6ms89WUqf3 root@yussuf-user"
+          ]
+}
+
+locals {
+    hostname_base64 = base64encode(data.ignition_config.bootstrap_modified.rendered)
+}
+data "ignition_config" "bootstrap_modified" {
+    files = [data.ignition_file.b1_hostname.rendered]
+}
+
+# ignitions
+data "ignition_config" "bootstrap1" {
+#    merge {
+#        source  = "http://${var.bastion_ip}:8080/ignition/bootstrap.ign"
+#    }
+    merge {
+        source  = "data:text/plain;charset=utf-8;base64,${local.hostname_base64}"
+    }
+    #files = [data.ignition_file.b1_hostname.rendered]
+    users = [data.ignition_user.core.rendered]
+}
+
+
+# libvirt_ignition
+resource "libvirt_ignition" "bootstrap1" {
+    name        = "${var.cluster_id}-bootstrap1.ign"
+    content     = data.ignition_config.bootstrap1.rendered
+    pool        = var.storage_pool_name
+}
+
+
+# domains
+resource "libvirt_domain" "bootstrap1" {
+    name    = "${var.cluster_id}-bootstrap1"
+    memory  = var.bootstrap.memory
+    vcpu    = var.bootstrap.vcpu
+
+    coreos_ignition = libvirt_ignition.bootstrap1.id
+
+    disk {
+        volume_id = libvirt_volume.bootstrap1.id
+    }
+    console {
+        type        = "pty"
+        target_port = 0
+    }
+    cpu = {
+        mode = var.cpu_mode
+    }
+    network_interface {
+        network_id  = var.network_id
+        hostname    = "bootstrap.${var.cluster_id}.${var.cluster_domain}"
+        mac         = var.bootstrap_mac
+    }
+}
+

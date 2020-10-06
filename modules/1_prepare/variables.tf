@@ -19,23 +19,23 @@
 ################################################################
 
 variable "cluster_domain" {
-  default   = "example.com"
+  default = "example.com"
 }
 variable "cluster_id" {
-  default   = "test-ocp"
+  default = "test-ocp"
 }
 
 variable "bastion" {
-    # only one node is supported
-    default = {
-        memory  = 4096
-        vcpu    = 2
-    }
+  # only one node is supported
+  default = {
+    memory = 4096
+    vcpu   = 2
+  }
 }
 
 variable "cpu_mode" {}
 
-variable "bastion_image" { default   = "file:///home/libvirt/images/bastion.qcow2" }
+variable "bastion_image" { default = "file:///home/libvirt/images/bastion.qcow2" }
 
 variable "rhel_username" {}
 variable "rhel_password" {}

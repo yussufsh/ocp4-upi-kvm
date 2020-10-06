@@ -19,48 +19,48 @@
 ################################################################
 
 output "cluster_id" {
-    value = local.cluster_id
+  value = local.cluster_id
 }
 
 output "bastion_ip" {
-    value = module.prepare.bastion_ip
+  value = module.prepare.bastion_ip
 }
 
 output "bastion_ssh_command" {
-    value = "ssh ${var.rhel_username}@${module.prepare.bastion_ip}"
+  value = "ssh ${var.rhel_username}@${module.prepare.bastion_ip}"
 }
 
 output "bootstrap_ip" {
-    value = local.bootstrap.ip
+  value = local.bootstrap.ip
 }
 
 output "master_ips" {
-    value = null_resource.master_info.*.triggers.ip
+  value = null_resource.master_info.*.triggers.ip
 }
 
 output "worker_ips" {
-    value = null_resource.worker_info.*.triggers.ip
+  value = null_resource.worker_info.*.triggers.ip
 }
 
 output "etc_hosts_entries" {
-    value = <<-EOF
+  value = <<-EOF
 
 ${module.prepare.bastion_ip} api.${local.cluster_id}.${var.cluster_domain} console-openshift-console.apps.${local.cluster_id}.${var.cluster_domain} integrated-oauth-server-openshift-authentication.apps.${local.cluster_id}.${var.cluster_domain} oauth-openshift.apps.${local.cluster_id}.${var.cluster_domain} prometheus-k8s-openshift-monitoring.apps.${local.cluster_id}.${var.cluster_domain} grafana-openshift-monitoring.apps.${local.cluster_id}.${var.cluster_domain} example.apps.${local.cluster_id}.${var.cluster_domain}
 EOF
 }
 
 output "oc_server_url" {
-    value = "https://api.${local.cluster_id}.${var.cluster_domain}:6443/"
+  value = "https://api.${local.cluster_id}.${var.cluster_domain}:6443/"
 }
 
 output "web_console_url" {
-    value = "https://console-openshift-console.apps.${local.cluster_id}.${var.cluster_domain}"
+  value = "https://console-openshift-console.apps.${local.cluster_id}.${var.cluster_domain}"
 }
 
 output "storageclass_name" {
-    value = "nfs-storage-provisioner"
+  value = "nfs-storage-provisioner"
 }
 
 output "install_status" {
-    value = module.install.install_status
+  value = module.install.install_status
 }

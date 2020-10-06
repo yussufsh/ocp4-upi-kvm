@@ -22,26 +22,26 @@ variable "cluster_domain" {}
 variable "cluster_id" {}
 
 variable "bootstrap" {
-    # only one node is supported
-    default = {
-        count   = 1
-        memory  = 8192
-        vcpu    = 4
-    }
+  # only one node is supported
+  default = {
+    count  = 1
+    memory = 8192
+    vcpu   = 4
+  }
 }
 variable "master" {
-    default = {
-        count   = 3
-        memory  = 8192
-        vcpu    = 4
-    }
+  default = {
+    count  = 3
+    memory = 8192
+    vcpu   = 4
+  }
 }
 variable "worker" {
-    default = {
-        count   = 2
-        memory  = 8192
-        vcpu    = 4
-    }
+  default = {
+    count  = 2
+    memory = 8192
+    vcpu   = 4
+  }
 }
 
 variable "bootstrap_mac" {}
